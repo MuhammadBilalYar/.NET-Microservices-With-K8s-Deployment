@@ -4,3 +4,5 @@ CommandsService/obj/*
 PlatformService/.vs/PlatformService/v17/.suo
 PlatformService/bin/*
 PlatformService/obj/*
+PlatformService/.vs/*
+CommandsService/.vs/*
