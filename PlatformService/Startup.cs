@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using PlatformService.Data;
 using PlatformService.SyncDataService.Http;
@@ -12,18 +13,28 @@ namespace PlatformService
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
             Configuration = configuration;
+            this._env = env;
         }
 
         public IConfiguration Configuration { get; }
 
+        private readonly IWebHostEnvironment _env;
+
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<AppDbContext>(opt =>
-                                                opt.UseInMemoryDatabase("InMemory"));
-
+            if (_env.IsProduction())
+            {
+                Console.WriteLine("--> Using SQL Database.");
+                services.AddDbContext<AppDbContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("PlatformsCon")));
+            }
+            else
+            {
+                Console.WriteLine("--> Using InMemory Database.");
+                services.AddDbContext<AppDbContext>(opt => opt.UseInMemoryDatabase("InMemory"));
+            }
 
             services.AddScoped<IPlatformRepo, PlatformRepo>();
             services.AddHttpClient<ICommandDataClient, HttpCommandDataClient>();
@@ -57,7 +68,7 @@ namespace PlatformService
                 endpoints.MapControllers();
             });
 
-            PrepDb.PrePopulation(app);
+            PrepDb.PrePopulation(app, env.IsProduction());
         }
     }
 }
